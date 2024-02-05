@@ -1,0 +1,32 @@
+name: Website Uptime Monitor to Discord
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # 6시간마다 실행
+
+jobs:
+  check-websites-and-notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check openstack-kr.org
+        id: openstack-kr
+        uses: actions/http-client@v1
+        with:
+          url: 'http://openstack-kr.org'
+          method: 'GET'
+
+      - name: Check openinfra-kr.org
+        id: openinfra-kr
+        uses: actions/http-client@v1
+        with:
+          url: 'http://openinfra-kr.org'
+          method: 'GET'
+
+      - name: Send notification to Discord if any website is down
+        if: ${{ steps.openstack-kr.outputs.status-code != 200 || steps.openinfra-kr.outputs.status-code != 200 }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: "One or more websites are down. Please check the logs for more details."
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
