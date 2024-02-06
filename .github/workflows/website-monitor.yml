@@ -13,20 +13,28 @@ jobs:
         id: openstack-kr
         run: |
           status_code=$(curl -o /dev/null -s -w "%{http_code}\n" http://openstack-kr.org)
-          echo "status=$status_code" >> $GITHUB_ENV
-          if [ "$status_code" -ne 200 ]; then echo "::set-output name=openstack_kr_down::true"; fi
+          echo "OPENSTACK_KR_STATUS=$status_code" >> $GITHUB_ENV
+          if [ "$status_code" -ne 200 ] && [ "$status_code" -ne 301 ]; then
+            echo "openstack_kr_down=true" >> $GITHUB_ENV
+          else
+            echo "openstack_kr_down=false" >> $GITHUB_ENV
+          fi
 
       - name: Check openinfra-kr.org
         id: openinfra-kr
         run: |
           status_code=$(curl -o /dev/null -s -w "%{http_code}\n" http://openinfra-kr.org)
-          echo "status=$status_code" >> $GITHUB_ENV
-          if [ "$status_code" -ne 200 ]; then echo "::set-output name=openinfra_kr_down::true"; fi
+          echo "OPENINFRA_KR_STATUS=$status_code" >> $GITHUB_ENV
+          if [ "$status_code" -ne 200 ] && [ "$status_code" -ne 301 ]; then
+            echo "openinfra_kr_down=true" >> $GITHUB_ENV
+          else
+            echo "openinfra_kr_down=false" >> $GITHUB_ENV
+          fi
 
       - name: Send notification to Discord if any website is down
-        if: steps.openstack-kr.outputs.openstack_kr_down == 'true' || steps.openinfra-kr.outputs.openinfra_kr_down == 'true'
-        uses: Ilshidur/action-discord@master
+        if: env.openstack_kr_down == 'true' || env.openinfra_kr_down == 'true'
+        uses: "Ilshidur/action-discord@0.3.2"
         with:
-          args: "One or more websites are down. Please check the logs for more details."
+          args: "One or more websites are down or redirected. Please check the logs for more details."
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
