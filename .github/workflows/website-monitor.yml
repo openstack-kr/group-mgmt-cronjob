@@ -31,8 +31,19 @@ jobs:
             echo "openinfra_kr_down=false" >> $GITHUB_ENV
           fi
 
+      - name: Check forum.openinfra-kr.org
+        id: forum-openinfra-kr
+        run: |
+          status_code=$(curl -o /dev/null -s -w "%{http_code}\n" https://forum.openinfra-kr.org)
+          echo "FORUM_OPENINFRA_KR_STATUS=$status_code" >> $GITHUB_ENV
+          if [ "$status_code" -ne 200 ] && [ "$status_code" -ne 301 ]; then
+            echo "forum_openinfra_kr_down=true" >> $GITHUB_ENV
+          else
+            echo "forum_openinfra_kr_down=false" >> $GITHUB_ENV
+          fi
+
       - name: Send notification to Discord if any website is down
-        if: env.openstack_kr_down == 'true' || env.openinfra_kr_down == 'true'
+        if: env.openstack_kr_down == 'true' || env.openinfra_kr_down == 'true' || env.forum_openinfra_kr_down == 'true'
         uses: "Ilshidur/action-discord@0.3.2"
         with:
           args: "One or more websites are down or redirected. Please check the logs for more details."
